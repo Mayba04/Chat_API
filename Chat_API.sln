@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.6.33815.320
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chat_API", "Chat_API\Chat_API.csproj", "{6CD1291C-ECC4-457B-8F2A-D5ED63E838FA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core", "Core\Core.csproj", "{F1872066-DEC8-468A-A185-4A582CF78641}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure", "Infrastructure\Infrastructure.csproj", "{D11FF03E-2B61-48B1-B90B-2425A50080F1}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6CD1291C-ECC4-457B-8F2A-D5ED63E838FA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6CD1291C-ECC4-457B-8F2A-D5ED63E838FA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6CD1291C-ECC4-457B-8F2A-D5ED63E838FA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6CD1291C-ECC4-457B-8F2A-D5ED63E838FA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F1872066-DEC8-468A-A185-4A582CF78641}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F1872066-DEC8-468A-A185-4A582CF78641}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F1872066-DEC8-468A-A185-4A582CF78641}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F1872066-DEC8-468A-A185-4A582CF78641}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D11FF03E-2B61-48B1-B90B-2425A50080F1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D11FF03E-2B61-48B1-B90B-2425A50080F1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D11FF03E-2B61-48B1-B90B-2425A50080F1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D11FF03E-2B61-48B1-B90B-2425A50080F1}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {E339CF0D-EDE5-4A85-A58A-1A4B6A117F2F}
+	EndGlobalSection
+EndGlobal
