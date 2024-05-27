@@ -49,6 +49,15 @@ namespace Infrastructure.Context
                 .HasOne(ur => ur.Role)
                 .WithMany()
                 .HasForeignKey(ur => ur.RoleId);
+
+            modelBuilder.Entity<Message>()
+            .HasOne(m => m.AdminCommentDetail)
+            .WithOne(ac => ac.Message)
+            .HasForeignKey<AdminComment>(ac => ac.MessageId);
+             
+            modelBuilder.Entity<ChatSession>()
+           .Property(s => s.SessionVerificationByAdmin)
+           .HasDefaultValue(true);
         }
 
 

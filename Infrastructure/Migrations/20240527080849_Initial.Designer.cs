@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20240514213132_Initial")]
+    [Migration("20240527080849_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -43,6 +43,11 @@ namespace Infrastructure.Migrations
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<bool?>("SessionVerificationByAdmin")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
 
                     b.Property<int>("UserId")
                         .HasColumnType("integer");
@@ -77,7 +82,10 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("MessageId");
+                    b.HasIndex("AdminId");
+
+                    b.HasIndex("MessageId")
+                        .IsUnique();
 
                     b.ToTable("AdminComment");
                 });
@@ -208,33 +216,39 @@ namespace Infrastructure.Migrations
                         {
                             Id = 1,
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "6bc2292d-7657-4008-a941-0b90ca66056d",
+                            ConcurrencyStamp = "0f5a898d-f85e-412f-913c-87ead112ef9d",
                             Email = "admin@email.com",
-                            EmailConfirmed = false,
+                            EmailConfirmed = true,
                             FirstName = "Pavlo",
+                            Image = "default.webp",
                             LastName = "Mayba",
                             LockoutEnabled = false,
-                            NormalizedUserName = "Pavlo Mayba",
-                            PasswordHash = "AQAAAAIAAYagAAAAEKoRka8XefNvCvcDkAERIFrA8lMp+cvahJ7Ksmr5jE00oaiGMA4kCNQFGuNRvxF45w==",
+                            NormalizedEmail = "ADMIN@EMAIL.COM",
+                            NormalizedUserName = "PAVLO MAYBA",
+                            PasswordHash = "AQAAAAIAAYagAAAAEJFmZdWqgeOtXACEL0kHJKLhCnwwXYls39BDNn1GC84RrwPSvvk/H/712WofPh+jBw==",
                             PhoneNumber = "0987654321",
                             PhoneNumberConfirmed = false,
+                            SecurityStamp = "edc2d0f0-ff65-4fb6-86c8-ee3480eb1425",
                             TwoFactorEnabled = false,
-                            UserName = "admin"
+                            UserName = "admin@email.com"
                         },
                         new
                         {
                             Id = 2,
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "35b8bc85-14f7-4f91-93aa-639f20d0a3a2",
+                            ConcurrencyStamp = "7a1fed9e-a388-4faf-8ed1-66ec26eff932",
                             Email = "user@email.com",
-                            EmailConfirmed = false,
+                            EmailConfirmed = true,
                             FirstName = "Oleg",
+                            Image = "default.webp",
                             LastName = "Dobrov",
                             LockoutEnabled = false,
-                            NormalizedUserName = "Oleg Dobrov",
-                            PasswordHash = "AQAAAAIAAYagAAAAEFNT8a0KQYZc1vind9+iptCT6tnqjeKtuP74PCwNqC+Z+cQAIzaiLDSonpaXShFo4g==",
+                            NormalizedEmail = "USER@EMAIL.COM",
+                            NormalizedUserName = "OLEG DOBROV",
+                            PasswordHash = "AQAAAAIAAYagAAAAECRr/2stSloWDd19tnspdwGX4fvfi7nY+T1r8JHrHWIHPuJgjheBtMW3o7gb0gWC7g==",
                             PhoneNumber = "1234567890",
                             PhoneNumberConfirmed = false,
+                            SecurityStamp = "79cdba3c-5887-4467-a069-4645d725dd8e",
                             TwoFactorEnabled = false,
                             UserName = "user@email.com"
                         });
@@ -408,11 +422,19 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Core.Entities.Identity.AdminComment", b =>
                 {
-                    b.HasOne("Core.Entities.Message", "Message")
+                    b.HasOne("Core.Entities.Identity.UserEntity", "Admin")
                         .WithMany()
-                        .HasForeignKey("MessageId")
+                        .HasForeignKey("AdminId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("Core.Entities.Message", "Message")
+                        .WithOne("AdminCommentDetail")
+                        .HasForeignKey("Core.Entities.Identity.AdminComment", "MessageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Admin");
 
                     b.Navigation("Message");
                 });
@@ -502,6 +524,12 @@ namespace Infrastructure.Migrations
                     b.Navigation("ChatSessions");
 
                     b.Navigation("UserRoles");
+                });
+
+            modelBuilder.Entity("Core.Entities.Message", b =>
+                {
+                    b.Navigation("AdminCommentDetail")
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

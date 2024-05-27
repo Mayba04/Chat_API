@@ -165,5 +165,12 @@ namespace Chat_API.Controllers
                 return StatusCode(500, new { Error = ex.Message });
             }
         }
+
+        [HttpGet("pending-verification-sessions")]
+        public async Task<IActionResult> GetPendingVerificationSessions()
+        {
+            var sessions = await _chatService.GetPendingVerificationSessionsAsync();
+            return Ok(sessions);
+        }
     }
 }

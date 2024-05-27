@@ -27,14 +27,18 @@ namespace Infrastructure.Initializers
             var adminUser = new UserEntity
             {
                 Id = 1,
-                UserName = "admin",
+                UserName = "admin@email.com",
                 FirstName = "Pavlo",
                 LastName = "Mayba",
-                NormalizedUserName = "Pavlo Mayba",
+                NormalizedUserName = "PAVLO MAYBA",
                 PhoneNumber = "0987654321",
-                Email = "admin@email.com"
+                Email = "admin@email.com",
+                NormalizedEmail = "ADMIN@EMAIL.COM",
+                EmailConfirmed = true,
+                Image = "default.webp",
+                SecurityStamp = Guid.NewGuid().ToString()
             };
-            adminUser.PasswordHash = hasher.HashPassword(adminUser, "123456");
+            adminUser.PasswordHash = hasher.HashPassword(adminUser, "Admin@123");
 
             var normalUser = new UserEntity
             {
@@ -42,19 +46,24 @@ namespace Infrastructure.Initializers
                 UserName = "user@email.com",
                 FirstName = "Oleg",
                 LastName = "Dobrov",
-                NormalizedUserName = "Oleg Dobrov",
+                NormalizedUserName = "OLEG DOBROV",
                 PhoneNumber = "1234567890",
-                Email = "user@email.com"
+                Email = "user@email.com",
+                NormalizedEmail = "USER@EMAIL.COM",
+                EmailConfirmed = true,
+                Image = "default.webp",
+                SecurityStamp = Guid.NewGuid().ToString()
             };
-            normalUser.PasswordHash = hasher.HashPassword(normalUser, "123456");
+            normalUser.PasswordHash = hasher.HashPassword(normalUser, "User@123");
+
             modelBuilder.Entity<UserEntity>().HasData(adminUser, normalUser);
         }
 
         public static void SeedUserRoles(this ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<UserRoleEntity>().HasData(
-                new UserRoleEntity { UserId = 1, RoleId = 1, },
-                new UserRoleEntity {  UserId = 2, RoleId = 2 }
+                new UserRoleEntity { UserId = 1, RoleId = 1 },
+                new UserRoleEntity { UserId = 2, RoleId = 2 }
             );
         }
     }

@@ -13,5 +13,6 @@ namespace Core.DTO.ChatSession
         public DateTime Created { get; set; }
         public string ChatId { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
+        public bool SessionVerificationByAdmin { get; set; }
     }
 }

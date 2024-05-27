@@ -1,4 +1,5 @@
-﻿using Core.DTO.ChatSession;
+﻿using Core.DTO.AdminComment;
+using Core.DTO.ChatSession;
 using Core.DTO.Message;
 using Core.DTO.Role;
 using Core.DTO.User;
@@ -31,6 +32,9 @@ namespace Core.Mapper
             CreateMap<ChatSession, ChatSessionDTO>().ReverseMap();
             CreateMap<ChatSession, CreateChatSessionDTO>().ReverseMap();
             CreateMap<ChatSessionDTO, ChatSession>().ReverseMap();
+
+            CreateMap<AdminComment, AdminCommentDTO>();
+            CreateMap<CreateAdminCommentDTO, AdminComment>();
         }
     }
 }

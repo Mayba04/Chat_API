@@ -179,6 +179,7 @@ namespace Infrastructure.Migrations
                     UserId = table.Column<int>(type: "integer", nullable: false),
                     Created = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     ChatId = table.Column<string>(type: "text", nullable: false),
+                    SessionVerificationByAdmin = table.Column<bool>(type: "boolean", nullable: true, defaultValue: true),
                     Name = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
@@ -231,6 +232,12 @@ namespace Infrastructure.Migrations
                 {
                     table.PrimaryKey("PK_AdminComment", x => x.Id);
                     table.ForeignKey(
+                        name: "FK_AdminComment_AspNetUsers_AdminId",
+                        column: x => x.AdminId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
                         name: "FK_AdminComment_Message_MessageId",
                         column: x => x.MessageId,
                         principalTable: "Message",
@@ -252,8 +259,8 @@ namespace Infrastructure.Migrations
                 columns: new[] { "Id", "AccessFailedCount", "ConcurrencyStamp", "Email", "EmailConfirmed", "FirstName", "Image", "LastName", "LockoutEnabled", "LockoutEnd", "NormalizedEmail", "NormalizedUserName", "PasswordHash", "PhoneNumber", "PhoneNumberConfirmed", "SecurityStamp", "TwoFactorEnabled", "UserName" },
                 values: new object[,]
                 {
-                    { 1, 0, "6bc2292d-7657-4008-a941-0b90ca66056d", "admin@email.com", false, "Pavlo", null, "Mayba", false, null, null, "Pavlo Mayba", "AQAAAAIAAYagAAAAEKoRka8XefNvCvcDkAERIFrA8lMp+cvahJ7Ksmr5jE00oaiGMA4kCNQFGuNRvxF45w==", "0987654321", false, null, false, "admin" },
-                    { 2, 0, "35b8bc85-14f7-4f91-93aa-639f20d0a3a2", "user@email.com", false, "Oleg", null, "Dobrov", false, null, null, "Oleg Dobrov", "AQAAAAIAAYagAAAAEFNT8a0KQYZc1vind9+iptCT6tnqjeKtuP74PCwNqC+Z+cQAIzaiLDSonpaXShFo4g==", "1234567890", false, null, false, "user@email.com" }
+                    { 1, 0, "0f5a898d-f85e-412f-913c-87ead112ef9d", "admin@email.com", true, "Pavlo", "default.webp", "Mayba", false, null, "ADMIN@EMAIL.COM", "PAVLO MAYBA", "AQAAAAIAAYagAAAAEJFmZdWqgeOtXACEL0kHJKLhCnwwXYls39BDNn1GC84RrwPSvvk/H/712WofPh+jBw==", "0987654321", false, "edc2d0f0-ff65-4fb6-86c8-ee3480eb1425", false, "admin@email.com" },
+                    { 2, 0, "7a1fed9e-a388-4faf-8ed1-66ec26eff932", "user@email.com", true, "Oleg", "default.webp", "Dobrov", false, null, "USER@EMAIL.COM", "OLEG DOBROV", "AQAAAAIAAYagAAAAECRr/2stSloWDd19tnspdwGX4fvfi7nY+T1r8JHrHWIHPuJgjheBtMW3o7gb0gWC7g==", "1234567890", false, "79cdba3c-5887-4467-a069-4645d725dd8e", false, "user@email.com" }
                 });
 
             migrationBuilder.InsertData(
@@ -266,9 +273,15 @@ namespace Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_AdminComment_AdminId",
+                table: "AdminComment",
+                column: "AdminId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_AdminComment_MessageId",
                 table: "AdminComment",
-                column: "MessageId");
+                column: "MessageId",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",

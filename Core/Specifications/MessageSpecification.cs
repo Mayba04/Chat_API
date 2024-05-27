@@ -20,5 +20,13 @@ namespace Core.Specifications
                 Query.OrderBy(a => a.Timestamp);
             }
         }
+
+        public class GetPendingBotMessages : Specification<Message>
+        {
+            public GetPendingBotMessages()
+            {
+                Query.Where(m => m.Role == "bot" && !m.AdminComment);
+            }
+        }
     }
 }

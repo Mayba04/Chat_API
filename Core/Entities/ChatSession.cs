@@ -14,6 +14,7 @@ namespace Core.Entities
         public UserEntity? User { get; set; }
         public DateTime Created { get; set; }
         public string ChatId { get; set; } = string.Empty;
+        public bool? SessionVerificationByAdmin { get; set; }
         public string Name { get; set; } = string.Empty;
         public virtual ICollection<Message>? Messages { get; set; }
     }

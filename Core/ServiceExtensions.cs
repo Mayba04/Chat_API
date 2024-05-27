@@ -23,6 +23,7 @@ namespace Core
             service.AddScoped<IFilesService, FilesService>();
             service.AddScoped<IChatService, ChatService>();
             service.AddScoped<IMessageService, MessageService>();
+            service.AddScoped<IAdminCommentService, AdminCommentService>();
             
         }
         public static void AddValidator(this IServiceCollection service)

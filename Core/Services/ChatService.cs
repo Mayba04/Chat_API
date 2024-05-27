@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Configuration;
-using MongoDB.Bson.IO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -77,6 +76,7 @@ namespace Core.Services
                         Created = DateTime.Now,
                         ChatId = chatId,
                         Name = name,
+                        SessionVerificationByAdmin = true,
                     };
                     var chatSession = await CreateChatSessionAsync(chatSessionDTO);
                     var IdLastCreateSession = await GetLastChatSessionAsync();
@@ -144,6 +144,16 @@ namespace Core.Services
                     var jsonResponse = JsonConvert.DeserializeObject<dynamic>(responseContent);
 
                     var message = jsonResponse.choices[0].message.content;
+
+                    var chatSession = await GetChatSessionByIdAsync(chatSessionId);
+                    var chat = new UpdateChatSessionDTO
+                    {
+                        Id = chatSession.Id,
+                        ChatId = chatSession.ChatId,
+                        SessionVerificationByAdmin = true
+                    };
+
+                    await UpdateChatSessionAsync(chat);
 
                     // Запис нового повідомлення від користувача
                     var userMessageDTO = new CreateMessageDTO
@@ -229,6 +239,7 @@ namespace Core.Services
             }
 
             session.ChatId = sessionDTO.ChatId;
+            session.SessionVerificationByAdmin = sessionDTO.SessionVerificationByAdmin;
 
             await _chatSessionRepository.Update(session);
             await _chatSessionRepository.Save();
@@ -254,6 +265,12 @@ namespace Core.Services
         public async Task<IEnumerable<ChatSessionDTO>> GetChatSessionsByUserIdAsync(int userId)
         {
             return _mapper.Map<List<ChatSessionDTO>>(await _chatSessionRepository.GetListBySpec(new ChatSessionSpecification.GetChatSesionUserId(userId)));
+        }
+
+        public async Task<IEnumerable<ChatSessionDTO>> GetPendingVerificationSessionsAsync()
+        {
+            var sessions = await _chatSessionRepository.GetListBySpec(new ChatSessionSpecification.GetPendingVerificationSessions());
+            return _mapper.Map<IEnumerable<ChatSessionDTO>>(sessions);
         }
     }
 }

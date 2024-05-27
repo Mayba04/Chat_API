@@ -28,5 +28,14 @@ namespace Core.Specifications
             }
         }
 
+        public class GetPendingVerificationSessions : Specification<ChatSession>
+        {
+            public GetPendingVerificationSessions()
+            {
+                Query.Where(session => session.SessionVerificationByAdmin == true)
+                     .Include(session => session.Messages);
+            }
+        }
+
     }
 }
