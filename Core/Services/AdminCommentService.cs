@@ -64,11 +64,22 @@ namespace Core.Services
         public async Task DeleteAdminCommentAsync(int commentId)
         {
             var comment = await _adminCommentRepository.GetByID(commentId);
+
             if (comment == null)
             {
                 throw new KeyNotFoundException($"Admin comment with ID {commentId} not found.");
             }
 
+            var Message = await _messageRepository.GetByID(comment.MessageId);
+
+            if (Message == null)
+            {
+                throw new KeyNotFoundException($"Message with ID {comment.MessageId} not found.");
+            }
+
+            Message.AdminComment = false;
+            await _messageRepository.Update(Message);
+            await _messageRepository.Save();
             await _adminCommentRepository.Delete(comment);
             await _adminCommentRepository.Save();
         }

@@ -272,5 +272,11 @@ namespace Core.Services
             var sessions = await _chatSessionRepository.GetListBySpec(new ChatSessionSpecification.GetPendingVerificationSessions());
             return _mapper.Map<IEnumerable<ChatSessionDTO>>(sessions);
         }
+
+        public async Task<IEnumerable<ChatSessionDTO>> GetChatSessionsWithAdminCommentsAsync()
+        {
+            var sessions = await _chatSessionRepository.GetListBySpec(new ChatSessionSpecification.GetChatSessionsWithAdminComments());
+            return _mapper.Map<IEnumerable<ChatSessionDTO>>(sessions);
+        }
     }
 }

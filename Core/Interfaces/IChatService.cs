@@ -25,6 +25,7 @@ namespace Core.Interfaces
         Task<ChatSessionDTO> GetLastChatSessionAsync();
         Task<IEnumerable<ChatSessionDTO>> GetChatSessionsByUserIdAsync(int userId);
         Task<IEnumerable<ChatSessionDTO>> GetPendingVerificationSessionsAsync();
+        Task<IEnumerable<ChatSessionDTO>> GetChatSessionsWithAdminCommentsAsync();
 
     }
 }

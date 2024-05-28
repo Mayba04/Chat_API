@@ -37,5 +37,15 @@ namespace Core.Specifications
             }
         }
 
+        public class GetChatSessionsWithAdminComments : Specification<ChatSession>
+        {
+            public GetChatSessionsWithAdminComments()
+            {
+                Query.Include(cs => cs.Messages)
+                     .ThenInclude(m => m.AdminCommentDetail)
+                     .Where(cs => cs.Messages.Any(m => m.AdminComment != false));
+            }
+        }
+
     }
 }

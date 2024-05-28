@@ -172,5 +172,23 @@ namespace Chat_API.Controllers
             var sessions = await _chatService.GetPendingVerificationSessionsAsync();
             return Ok(sessions);
         }
+
+        [HttpGet("chat-sessions-with-admin-comments")]
+        public async Task<IActionResult> GetChatSessionsWithAdminComments()
+        {
+            try
+            {
+                var sessions = await _chatService.GetChatSessionsWithAdminCommentsAsync();
+                if (sessions == null)
+                {
+                    return NotFound("No chat sessions with admin comments found.");
+                }
+                return Ok(sessions);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Internal server error" + ex.Message);
+            }
+        }
     }
 }
