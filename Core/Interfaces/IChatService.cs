@@ -16,7 +16,8 @@ namespace Core.Interfaces
     {
         Task<string> SendMessageToOpenAI(string prompt, string token);
         Task<string> ContinueChatSessionAsync(int chatSessionId, string prompt, string token);
-        Task<string> SendMessageToAssistant(string prompt);
+        Task<string> SendMessageToAssistant(string prompt, string token);
+        Task<string> ContinueMessageToAssistant(string prompt, int chatSessionId, string token);
 
         Task<ChatSession> CreateChatSessionAsync(CreateChatSessionDTO session);
         Task<ChatSessionDTO> GetChatSessionByIdAsync(int sessionId);

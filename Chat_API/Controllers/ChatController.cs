@@ -26,8 +26,50 @@ namespace Chat_API.Controllers
         [HttpPost("ask")]
         public async Task<IActionResult> AskAssistant([FromBody] string prompt)
         {
-            var response = await _chatService.SendMessageToAssistant(prompt);
-            return Ok(response);
+            var token = await HttpContext.GetTokenAsync("access_token");
+
+
+            if (string.IsNullOrEmpty(prompt))
+            {
+                return BadRequest("Prompt is required");
+            }
+
+            try
+            {
+                var response = await _chatService.SendMessageToAssistant(prompt, token);
+                return Ok(new { Response = response });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Error = ex.Message });
+            }
+
+           
+        }
+
+        [HttpPost("continue/ask")]
+        public async Task<IActionResult> ContinueChatAskSession([FromBody] ContinueChatDTO dto)
+        {
+            if (string.IsNullOrEmpty(dto.Prompt))
+            {
+                return BadRequest("Prompt is required");
+            }
+
+            var token = await HttpContext.GetTokenAsync("access_token");
+            if (string.IsNullOrEmpty(token))
+            {
+                return Unauthorized("Token is missing");
+            }
+
+            try
+            {
+                var response = await _chatService.ContinueMessageToAssistant( dto.Prompt, dto.ChatSessionId, token);
+                return Ok(new { Response = response });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Error = ex.Message });
+            }
         }
 
 
