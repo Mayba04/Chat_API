@@ -17,6 +17,7 @@ using AutoMapper;
 using Core.Specifications;
 using Core.DTO.Role;
 using Core.DTO.Message;
+using Newtonsoft.Json.Linq;
 
 namespace Core.Services
 {
@@ -24,6 +25,7 @@ namespace Core.Services
     {
         private readonly HttpClient _httpClient;
         private readonly string _apiKey;
+        private readonly string _assistantId;
         private readonly IRepository<ChatSession> _chatSessionRepository;
         private readonly IMapper _mapper;
         private readonly IJwtTokenService _jwtTokenService;
@@ -33,6 +35,7 @@ namespace Core.Services
         {
             _httpClient = new HttpClient();
             _apiKey = configuration["ApiKey"];
+            _assistantId = configuration["AssistantId"];
             _chatSessionRepository = chatSessionRepository;
             _mapper = mapper;
             _jwtTokenService = jwtTokenService;
@@ -62,7 +65,7 @@ namespace Core.Services
                 if (response.IsSuccessStatusCode)
                 {
                     var responseData = JsonConvert.DeserializeObject<dynamic>(await response.Content.ReadAsStringAsync());
-                   
+
                     var responseContent = await response.Content.ReadAsStringAsync();
                     var jsonResponse = JsonConvert.DeserializeObject<dynamic>(responseContent);
 
@@ -88,7 +91,7 @@ namespace Core.Services
                         Timestamp = DateTime.Now,
                         Role = "user",
                         AdminComment = false
-                        
+
                     };
                     await _messageService.CreateMessageAsync(MessageUserDTO);
                     var MessagBotDTO = new CreateMessageDTO
@@ -278,5 +281,246 @@ namespace Core.Services
             var sessions = await _chatSessionRepository.GetListBySpec(new ChatSessionSpecification.GetChatSessionsWithAdminComments());
             return _mapper.Map<IEnumerable<ChatSessionDTO>>(sessions);
         }
+        //v1
+        //public async Task<string> SendMessageToAssistant(string prompt)
+        //{
+        //    var createThreadUrl = "https://api.openai.com/v1/threads";
+        //    var addMessageUrlTemplate = "https://api.openai.com/v1/threads/{0}/messages";
+        //    var createRunUrlTemplate = "https://api.openai.com/v1/threads/{0}/runs";
+        //    var retrieveRunUrlTemplate = "https://api.openai.com/v1/threads/{0}/runs/{1}";
+        //    var listMessagesUrlTemplate = "https://api.openai.com/v1/threads/{0}/messages";
+
+        //    _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _apiKey);
+        //    _httpClient.DefaultRequestHeaders.Add("OpenAI-Beta", "assistants=v2");
+        //    _httpClient.DefaultRequestHeaders.Add("OpenAI-Assistant-ID", _assistantId);
+
+        //    try
+        //    {
+        //        // Створення потоку
+        //        var threadRequestBody = new { };
+        //        var threadHttpContent = new StringContent(JsonConvert.SerializeObject(threadRequestBody), Encoding.UTF8, "application/json");
+        //        var threadResponse = await _httpClient.PostAsync(createThreadUrl, threadHttpContent);
+
+        //        if (!threadResponse.IsSuccessStatusCode)
+        //        {
+        //            var errorContent = await threadResponse.Content.ReadAsStringAsync();
+        //            return $"Error creating thread: {threadResponse.StatusCode}, Details: {errorContent}";
+        //        }
+
+        //        var threadResponseContent = await threadResponse.Content.ReadAsStringAsync();
+        //        var threadJsonResponse = JsonConvert.DeserializeObject<dynamic>(threadResponseContent);
+        //        string threadId = threadJsonResponse.id;
+
+        //        // Додавання повідомлення до потоку
+        //        var addMessageUrl = string.Format(addMessageUrlTemplate, threadId);
+        //        var messageRequestBody = new
+        //        {
+        //            role = "user",
+        //            content = prompt
+        //        };
+
+        //        var messageHttpContent = new StringContent(JsonConvert.SerializeObject(messageRequestBody), Encoding.UTF8, "application/json");
+        //        var messageResponse = await _httpClient.PostAsync(addMessageUrl, messageHttpContent);
+
+        //        if (!messageResponse.IsSuccessStatusCode)
+        //        {
+        //            var errorContent = await messageResponse.Content.ReadAsStringAsync();
+        //            return $"Error sending message: {messageResponse.StatusCode}, Details: {errorContent}";
+        //        }
+
+        //        // Запуск виконання
+        //        var createRunUrl = string.Format(createRunUrlTemplate, threadId);
+        //        var runRequestBody = new
+        //        {
+        //            assistant_id = _assistantId
+        //        };
+
+        //        var runHttpContent = new StringContent(JsonConvert.SerializeObject(runRequestBody), Encoding.UTF8, "application/json");
+        //        var runResponse = await _httpClient.PostAsync(createRunUrl, runHttpContent);
+
+        //        if (!runResponse.IsSuccessStatusCode)
+        //        {
+        //            var errorContent = await runResponse.Content.ReadAsStringAsync();
+        //            return $"Error creating run: {runResponse.StatusCode}, Details: {errorContent}";
+        //        }
+
+        //        var runResponseContent = await runResponse.Content.ReadAsStringAsync();
+        //        var runJsonResponse = JsonConvert.DeserializeObject<dynamic>(runResponseContent);
+        //        string runId = runJsonResponse.id;
+
+        //        // Очікування завершення виконання
+        //        var retrieveRunUrl = string.Format(retrieveRunUrlTemplate, threadId, runId);
+        //        dynamic runStatus;
+        //        do
+        //        {
+        //            await Task.Delay(1500); // Зачекайте 1.5 секунди перед повторною перевіркою
+        //            var runStatusResponse = await _httpClient.GetAsync(retrieveRunUrl);
+        //            var runStatusContent = await runStatusResponse.Content.ReadAsStringAsync();
+        //            runStatus = JsonConvert.DeserializeObject<dynamic>(runStatusContent);
+        //        } while (runStatus.status != "completed" && runStatus.status != "failed");
+
+        //        if (runStatus.status == "failed")
+        //        {
+        //            return "Run failed.";
+        //        }
+
+        //        // Отримання відповідей асистента
+        //        var listMessagesUrl = string.Format(listMessagesUrlTemplate, threadId);
+        //        var messagesResponse = await _httpClient.GetAsync(listMessagesUrl);
+
+        //        if (!messagesResponse.IsSuccessStatusCode)
+        //        {
+        //            var errorContent = await messagesResponse.Content.ReadAsStringAsync();
+        //            return $"Error retrieving messages: {messagesResponse.StatusCode}, Details: {errorContent}";
+        //        }
+
+        //        var messagesResponseContent = await messagesResponse.Content.ReadAsStringAsync();
+        //        var messagesJsonResponse = JsonConvert.DeserializeObject<dynamic>(messagesResponseContent);
+
+        //        // Додавання діагностики
+        //        if (messagesJsonResponse.messages == null)
+        //        {
+        //            return $"Error: 'messages' is null. Full response: {messagesResponseContent}";
+        //        }
+
+        //        var messageContent = messagesJsonResponse.messages[0].content.ToString();
+        //        return messageContent;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return $"Exception occurred: {ex.Message}";
+        //    }
+        //}
+
+
+
+
+
+        //v2
+        public async Task<string> SendMessageToAssistant(string prompt)
+        {
+            var createThreadUrl = "https://api.openai.com/v1/threads";
+            var addMessageUrlTemplate = "https://api.openai.com/v1/threads/{0}/messages";
+            var createRunUrlTemplate = "https://api.openai.com/v1/threads/{0}/runs";
+            var retrieveRunUrlTemplate = "https://api.openai.com/v1/threads/{0}/runs/{1}";
+            var listMessagesUrlTemplate = "https://api.openai.com/v1/threads/{0}/messages";
+
+            _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _apiKey);
+            _httpClient.DefaultRequestHeaders.Add("OpenAI-Beta", "assistants=v2");
+            _httpClient.DefaultRequestHeaders.Add("OpenAI-Assistant-ID", _assistantId);
+
+            try
+            {
+                // Створення потоку
+                var threadRequestBody = new { };
+                var threadHttpContent = new StringContent(JsonConvert.SerializeObject(threadRequestBody), Encoding.UTF8, "application/json");
+                var threadResponse = await _httpClient.PostAsync(createThreadUrl, threadHttpContent);
+
+                if (!threadResponse.IsSuccessStatusCode)
+                {
+                    var errorContent = await threadResponse.Content.ReadAsStringAsync();
+                    return $"Error creating thread: {threadResponse.StatusCode}, Details: {errorContent}";
+                }
+
+                var threadResponseContent = await threadResponse.Content.ReadAsStringAsync();
+                var threadJsonResponse = JObject.Parse(threadResponseContent);
+                string threadId = threadJsonResponse["id"].ToString();
+
+                // Додавання повідомлення до потоку
+                var addMessageUrl = string.Format(addMessageUrlTemplate, threadId);
+                var messageRequestBody = new
+                {
+                    role = "user",
+                    content = new[]
+                    {
+                        new {
+                        type = "text",
+                        text = prompt
+                        }
+                    }
+                };
+
+                var messageHttpContent = new StringContent(JsonConvert.SerializeObject(messageRequestBody), Encoding.UTF8, "application/json");
+                var messageResponse = await _httpClient.PostAsync(addMessageUrl, messageHttpContent);
+
+                if (!messageResponse.IsSuccessStatusCode)
+                {
+                    var errorContent = await messageResponse.Content.ReadAsStringAsync();
+                    return $"Error sending message: {messageResponse.StatusCode}, Details: {errorContent}";
+                }
+
+                // Запуск виконання
+                var createRunUrl = string.Format(createRunUrlTemplate, threadId);
+                var runRequestBody = new
+                {
+                    assistant_id = _assistantId
+                };
+
+                var runHttpContent = new StringContent(JsonConvert.SerializeObject(runRequestBody), Encoding.UTF8, "application/json");
+                var runResponse = await _httpClient.PostAsync(createRunUrl, runHttpContent);
+
+                if (!runResponse.IsSuccessStatusCode)
+                {
+                    var errorContent = await runResponse.Content.ReadAsStringAsync();
+                    return $"Error creating run: {runResponse.StatusCode}, Details: {errorContent}";
+                }
+
+                var runResponseContent = await runResponse.Content.ReadAsStringAsync();
+                var runJsonResponse = JObject.Parse(runResponseContent);
+                string runId = runJsonResponse["id"].ToString();
+
+                // Очікування завершення виконання
+                var retrieveRunUrl = string.Format(retrieveRunUrlTemplate, threadId, runId);
+                JObject runStatus;
+                do
+                {
+                    await Task.Delay(1500); // Зачекайте 1.5 секунди перед повторною перевіркою
+                    var runStatusResponse = await _httpClient.GetAsync(retrieveRunUrl);
+                    var runStatusContent = await runStatusResponse.Content.ReadAsStringAsync();
+                    runStatus = JObject.Parse(runStatusContent);
+                } while (runStatus["status"].ToString() != "completed" && runStatus["status"].ToString() != "failed");
+
+                if (runStatus["status"].ToString() == "failed")
+                {
+                    return "Run failed.";
+                }
+
+                // Отримання відповідей асистента
+                var listMessagesUrl = string.Format(listMessagesUrlTemplate, threadId);
+                var messagesResponse = await _httpClient.GetAsync(listMessagesUrl);
+
+                if (!messagesResponse.IsSuccessStatusCode)
+                {
+                    var errorContent = await messagesResponse.Content.ReadAsStringAsync();
+                    return $"Error retrieving messages: {messagesResponse.StatusCode}, Details: {errorContent}";
+                }
+
+                var messagesResponseContent = await messagesResponse.Content.ReadAsStringAsync();
+                var messagesJsonResponse = JObject.Parse(messagesResponseContent);
+
+                // Діагностика для перевірки структури відповіді
+                if (messagesJsonResponse["data"] == null || !messagesJsonResponse["data"].Any())
+                {
+                    return $"Error: 'data' is null or empty. Full response: {messagesResponseContent}";
+                }
+
+                var assistantMessage = messagesJsonResponse["data"].FirstOrDefault(msg => msg["role"].ToString() == "assistant");
+                if (assistantMessage == null)
+                {
+                    return $"Error: No assistant message found. Full response: {messagesResponseContent}";
+                }
+
+                var messageContent = assistantMessage["content"][0]["text"]["value"].ToString();
+                return messageContent;
+            }
+            catch (Exception ex)
+            {
+                return $"Exception occurred: {ex.Message}";
+            }
+        }
+
+
+
+
     }
 }

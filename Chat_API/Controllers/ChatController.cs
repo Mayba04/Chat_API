@@ -11,7 +11,7 @@ using System.Security.Claims;
 
 namespace Chat_API.Controllers
 {
-    [Authorize]
+    //[Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class ChatController : ControllerBase
@@ -23,7 +23,13 @@ namespace Chat_API.Controllers
             _chatService = chatService;
         }
 
-     
+        [HttpPost("ask")]
+        public async Task<IActionResult> AskAssistant([FromBody] string prompt)
+        {
+            var response = await _chatService.SendMessageToAssistant(prompt);
+            return Ok(response);
+        }
+
 
         [HttpPost("send")]
         public async Task<IActionResult> SendMessage([FromBody] string prompt)
