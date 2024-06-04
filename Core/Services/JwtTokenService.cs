@@ -28,13 +28,15 @@ namespace Core.Services
         public async Task<string> CreateToken(UserEntity user)
         {
             var roles = await _userManager.GetRolesAsync(user);
+            var idroles = await _userManager.GetUsersInRoleAsync(roles.ToString());
             List<Claim> claims = new()
             {
                 new Claim("Id", user.Id.ToString()),
                 new Claim("email", user.Email),
                 new Claim("FirstName", $"{user.FirstName}"),
                 new Claim("LastName", $"{user.LastName}"),
-                new Claim("image", user.Image ?? string.Empty)
+                new Claim("image", user.Image ?? string.Empty),
+                new Claim("Phone", user.PhoneNumber),
             };
 
             foreach (var role in roles)

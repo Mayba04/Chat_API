@@ -1,12 +1,14 @@
 ﻿using Core.DTO.User;
 using Core.Interfaces;
+using Core.Validation.User;
+using FluentValidation.Results;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Chat_API.Controllers
 {
-    //[Authorize]
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class UserController : ControllerBase
@@ -81,6 +83,11 @@ namespace Chat_API.Controllers
         [HttpPut("update")]
         public async Task<IActionResult> UpdateUser([FromForm] UpdateUserDTO userDto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             try
             {
                 await _userService.UpdateUserAsync(userDto);
@@ -88,8 +95,30 @@ namespace Chat_API.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ex.Message);
+                return StatusCode(500, new { message = ex.Message });
             }
         }
+
+        [HttpPut("updatepassword")]
+        public async Task<IActionResult> ChangePasswordInfo([FromForm] EditUserPasswordDTO model)
+        {
+            EditPasswordValidation validator = new EditPasswordValidation();
+            ValidationResult validationResult = await validator.ValidateAsync(model);
+            if (!validationResult.IsValid)
+            {
+                return StatusCode(400, new { message = validationResult.ToString() });
+            }
+            try
+            {
+                await _userService.ChangePasswordInfo(model);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+
     }
 }

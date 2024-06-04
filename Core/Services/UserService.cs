@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Core.Constants;
 using Core.DTO.Role;
 using Core.DTO.User;
 using Core.Entities.Identity;
@@ -34,8 +35,8 @@ namespace Core.Services
 
         public async Task<IdentityResult> CreatAsync(CreateUserDTO userDto)
         {
-            var newUser = _mapper.Map<UserEntity>(userDto); 
-            newUser.UserName = newUser.FirstName +"_"+ newUser.LastName;
+            var newUser = _mapper.Map<UserEntity>(userDto);
+            newUser.UserName = newUser.FirstName + "_" + newUser.LastName;
             if (userDto.ImageFile != null)
             {
                 newUser.Image = await _filesService.SaveImage(userDto.ImageFile);
@@ -53,11 +54,11 @@ namespace Core.Services
             {
                 var userRole = new UserRoleEntity
                 {
-                    UserId = lastuser.Id,  
-                    RoleId = userDto.Role,  
+                    UserId = lastuser.Id,
+                    RoleId = userDto.Role,
                 };
                 await _userroleRepository.Insert(userRole);
-                
+
                 await _userroleRepository.Save();
             }
 
@@ -109,10 +110,10 @@ namespace Core.Services
                 for (int i = 0; i < users.Count(); i++)
                 {
                     var userrole = userroles.FirstOrDefault(a => a.UserId == users[i].Id);
-                    if (userrole != null) 
+                    if (userrole != null)
                     {
                         var role = roles.FirstOrDefault(a => a.Id == userrole.RoleId);
-                        if (role != null) 
+                        if (role != null)
                         {
                             users[i].Role = role.Name;
                         }
@@ -122,8 +123,8 @@ namespace Core.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString()); 
-                return new List<UserDTO>(); 
+                Console.WriteLine(ex.ToString());
+                return new List<UserDTO>();
             }
         }
 
@@ -139,13 +140,13 @@ namespace Core.Services
             var userroles = await _userroleRepository.GetItemBySpec(new UserRolesSpecification.GetByUserRoleUserId(userId));
             if (userroles == null)
             {
-                throw new Exception("User_roles not found"); 
+                throw new Exception("User_roles not found");
             }
 
             var role = await _roleRepository.GetByID(userroles.RoleId);
             if (role == null)
             {
-                throw new Exception("Role not found"); 
+                throw new Exception("Role not found");
             }
 
             var mapped = _mapper.Map<UserDTO>(user);
@@ -155,11 +156,11 @@ namespace Core.Services
 
         public async Task UpdateUserAsync(UpdateUserDTO userDto)
         {
+            var rolesid = new RoleEntity();
             var user = await _userManager.FindByIdAsync(userDto.Id.ToString());
             if (user == null)
             {
-                Console.WriteLine("User not found");
-                throw new Exception("User not found"); 
+                throw new Exception("User not found");
             }
 
             // Manual mapping of properties
@@ -186,14 +187,18 @@ namespace Core.Services
                 Console.WriteLine("Failed to update user");
                 throw new Exception("Failed to update user");
             }
-
+            if (userDto.Role == null || userDto.Role == 0)
+            {
+                rolesid = await _roleRepository.GetItemBySpec(new RolesSpecification.GetRolesByName(userDto.RoleName));
+            }
+            
             var userrole = await _userroleRepository.GetItemBySpec(new UserRolesSpecification.GetByUserRoleUserId(user.Id));
             if (userrole != null)
             {
                 var userRole = new UserRoleEntity
                 {
                     UserId = userrole.UserId,
-                    RoleId = userDto.Role,
+                    RoleId = rolesid.Id,
                 };
                 await _userroleRepository.Delete(userrole);
                 await _userroleRepository.Insert(userRole);
@@ -201,5 +206,22 @@ namespace Core.Services
                 await _userroleRepository.Save();
             }
         }
+
+        public async Task ChangePasswordInfo(EditUserPasswordDTO passwordDto)
+        {
+            var user = await _userManager.FindByIdAsync(passwordDto.Id.ToString());
+            if (user == null)
+            {
+                throw new Exception("User not found");
+            }
+
+            IdentityResult result = await _userManager.ChangePasswordAsync(user, passwordDto.CurrentPassword, passwordDto.NewPassword);
+            if (!result.Succeeded)
+            {
+                throw new Exception("Password failed to update");
+            }
+
+        }
+
     }
 }

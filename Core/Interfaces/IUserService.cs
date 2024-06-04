@@ -17,5 +17,6 @@ namespace Core.Interfaces
         Task<IEnumerable<UserDTO>> GetAllUsersAsync();
         Task UpdateUserAsync(UpdateUserDTO userDto);
         Task DeleteUserAsync(int userId);
+        Task ChangePasswordInfo(EditUserPasswordDTO passwordDto);
     }
 }

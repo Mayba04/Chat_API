@@ -20,5 +20,6 @@ namespace Core.Specifications
                 Query.Where(a => a.UserId == userid);
             }
         }
+
     }
 }
