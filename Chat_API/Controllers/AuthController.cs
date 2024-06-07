@@ -3,6 +3,7 @@ using Core.Entities.Identity;
 using Core.Interfaces;
 using Core.Specifications;
 using Core.Validation.User;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -72,6 +73,19 @@ namespace Chat_API.Controllers
 
             return Ok(new { message = "Registration successful" });
         }
+
+        [HttpPost("confirmemail")]
+        public async Task<IActionResult> ConfirmEmail([FromForm] string userId, [FromForm] string token)
+        {
+            var result = await _userService.ConfirmEmailAsync(userId, token);
+            if (result.Succeeded)
+            {
+                return Ok(new { message = "ConfirmEmail successful" });
+            }
+
+            return BadRequest(new { message = "Email not confirmed", errors = result.Errors });
+        }
+
 
 
     }

@@ -24,7 +24,9 @@ namespace Core
             service.AddScoped<IChatService, ChatService>();
             service.AddScoped<IMessageService, MessageService>();
             service.AddScoped<IAdminCommentService, AdminCommentService>();
-            
+
+            service.AddTransient<EmailService>();
+
         }
         public static void AddValidator(this IServiceCollection service)
         {

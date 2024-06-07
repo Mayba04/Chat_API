@@ -541,7 +541,6 @@ namespace Core.Services
 
                 return $"ChatSesion: {IdLastCreateSession.Id},Chat ID: {chatId}, Message: {message}";
 
-                return messageContent;
             }
             catch (Exception ex)
             {

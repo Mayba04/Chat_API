@@ -18,5 +18,7 @@ namespace Core.Interfaces
         Task UpdateUserAsync(UpdateUserDTO userDto);
         Task DeleteUserAsync(int userId);
         Task ChangePasswordInfo(EditUserPasswordDTO passwordDto);
+        Task<IdentityResult> ConfirmEmailAsync(string userId, string token);
+        Task<bool> SendConfirmationEmailAsync(UserEntity user);
     }
 }

@@ -6,6 +6,8 @@ using Core.Entities.Identity;
 using Core.Interfaces;
 using Core.Specifications;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,10 +21,13 @@ namespace Core.Services
         private readonly IRepository<UserEntity> _userRepository;
         private readonly IMapper _mapper;
         private readonly IFilesService _filesService;
+        private readonly EmailService _emailService;
         private readonly IRepository<UserRoleEntity> _userroleRepository;
         private readonly IRepository<RoleEntity> _roleRepository;
         private readonly UserManager<UserEntity> _userManager;
-        public UserService(IRepository<UserEntity> userRepository, UserManager<UserEntity> userManager, IMapper mapper, IFilesService filesService, IRepository<UserRoleEntity> userroleRepository, IRepository<RoleEntity> roleRepository)
+        private readonly IConfiguration _configuration;
+
+        public UserService(IRepository<UserEntity> userRepository, UserManager<UserEntity> userManager, IMapper mapper, IFilesService filesService, IRepository<UserRoleEntity> userroleRepository, IRepository<RoleEntity> roleRepository, EmailService emailService, IConfiguration configuration)
         {
             _userRepository = userRepository;
             _mapper = mapper;
@@ -30,6 +35,8 @@ namespace Core.Services
             _userroleRepository = userroleRepository;
             _roleRepository = roleRepository;
             _userManager = userManager;
+            _emailService = emailService;
+            _configuration = configuration;
         }
 
 
@@ -62,10 +69,16 @@ namespace Core.Services
                 await _userroleRepository.Save();
             }
 
+            var emailResult = await SendConfirmationEmailAsync(lastuser);
+            if (!emailResult)
+            {
+                await DeleteUserAsync(newUser.Id); 
+                return IdentityResult.Failed(new IdentityError { Description = "Failed to send confirmation email." });
+            }
+
 
             return IdentityResult.Success;
         }
-
 
         public async Task<UserEntity> CreateUserAsync(CreateUserDTO userDto)
         {
@@ -127,7 +140,6 @@ namespace Core.Services
                 return new List<UserDTO>();
             }
         }
-
 
         public async Task<UserDTO> GetUserByIdAsync(int userId)
         {
@@ -220,8 +232,44 @@ namespace Core.Services
             {
                 throw new Exception("Password failed to update");
             }
-
         }
+
+        public async Task<bool> SendConfirmationEmailAsync(UserEntity user)
+        {
+            try
+            {
+                string token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+                byte[] encodedToken = Encoding.UTF8.GetBytes(token);
+                string validEmailToken = WebEncoders.Base64UrlEncode(encodedToken);
+
+                string url = $"{_configuration["HostSettings:URL"]}/confirmemail?userid={user.Id}&token={validEmailToken}";
+
+                string emailBody = $"<h1>Confirm your email</h1> <a href='{url}'>Confirm now!</a>";
+                return await _emailService.SendEmailAsync(user.Email, "Email confirmation.", emailBody);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in SendConfirmationEmailAsync: {ex.Message}");
+                return false; 
+            }
+        }
+
+
+        public async Task<IdentityResult> ConfirmEmailAsync(string userId, string token)
+        {
+            UserEntity? user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                throw new Exception("User not found");
+            }
+
+            byte[] decodedToken = WebEncoders.Base64UrlDecode(token);
+            string normalToken = Encoding.UTF8.GetString(decodedToken);
+
+            IdentityResult result = await _userManager.ConfirmEmailAsync(user, normalToken);
+            return result;
+        }
+
 
     }
 }
