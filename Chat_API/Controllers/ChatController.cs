@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net.Http;
 using System.Security.Claims;
 
 namespace Chat_API.Controllers
@@ -17,9 +18,11 @@ namespace Chat_API.Controllers
     public class ChatController : ControllerBase
     {
         private readonly IChatService _chatService;
+        private readonly HttpClient _httpClient;
 
         public ChatController(IChatService chatService)
         {
+            _httpClient = new HttpClient();
             _chatService = chatService;
         }
 
@@ -238,5 +241,57 @@ namespace Chat_API.Controllers
                 return StatusCode(500, "Internal server error" + ex.Message);
             }
         }
+
+        [HttpGet("threadIdCheck")]
+        public async Task<IActionResult> CheckThreadId(string threadId)
+        {
+            if (string.IsNullOrWhiteSpace(threadId))
+            {
+                return BadRequest("Thread ID is required.");
+            }
+
+            bool exists = await _chatService.CheckIfThreadExists(threadId);
+
+            if (exists)
+            {
+                return Ok(new { ThreadExists = true });
+            }
+            else
+            {
+                return NotFound(new { ThreadExists = false });
+            }
+        }
+
+        [HttpGet("getThreadContext")]
+        public async Task<IActionResult> GetThreadContext(string threadId)
+        {
+            var threadExists = await _chatService.CheckIfThreadExists(threadId);
+            if (!threadExists)
+            {
+                return NotFound(new { Message = "Thread does not exist." });
+            }
+
+            var threadMessages = await _chatService.GetThreadMessages(threadId);
+            if (threadMessages == null)
+            {
+                return NotFound(new { Message = "Failed to retrieve thread messages." });
+            }
+
+            return Ok(threadMessages);
+        }
+
+        [HttpPost("continueThread")]
+        public async Task<IActionResult> ContinueThread(string prompt, string threadId)
+        {
+            if (string.IsNullOrEmpty(prompt) || string.IsNullOrEmpty(threadId))
+            {
+                return BadRequest("Prompt and ThreadId are required.");
+            }
+
+            var response = await _chatService.ContinueDialogWithThread(prompt, threadId);
+            return Ok(response);
+        }
+
+
     }
 }

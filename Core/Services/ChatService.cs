@@ -504,6 +504,8 @@ namespace Core.Services
 
                 var messageContent = assistantMessage["content"][0]["text"]["value"].ToString();
                 var chatId = assistantMessage["id"].ToString();// jsonResponse.id;
+                var threadid = assistantMessage["thread_id"].ToString();//"""thread_id"": ""thread_xmxBCpt16SEaJsL7woRxFqtD"""
+
                 var message = messageContent;
                 var name = prompt.Length > 20 ? prompt.Substring(0, 20) + "." : prompt;
 
@@ -539,8 +541,8 @@ namespace Core.Services
                 };
                 await _messageService.CreateMessageAsync(MessagBotDTO);
 
-                return $"ChatSesion: {IdLastCreateSession.Id},Chat ID: {chatId}, Message: {message}";
-
+                return $"ChatSesion: {IdLastCreateSession.Id},Chat ID: {chatId}, Message: {message}, ThreadId: {threadid}";
+       
             }
             catch (Exception ex)
             {
@@ -701,6 +703,189 @@ namespace Core.Services
                 return $"Exception occurred: {ex.Message}";
             }
         }
+
+        public async Task<bool> CheckIfThreadExists(string threadId)
+        {
+            var listMessagesUrlTemplate = "https://api.openai.com/v1/threads/{0}/messages";
+            var listMessagesUrl = string.Format(listMessagesUrlTemplate, threadId);
+
+            // Переконайтеся, що ці заголовки встановлено правильно
+            _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _apiKey);
+            _httpClient.DefaultRequestHeaders.Remove("OpenAI-Beta");
+            _httpClient.DefaultRequestHeaders.Add("OpenAI-Beta", "assistants=v2");
+            _httpClient.DefaultRequestHeaders.Remove("OpenAI-Assistant-ID");
+            _httpClient.DefaultRequestHeaders.Add("OpenAI-Assistant-ID", _assistantId);
+
+            var messagesResponse = await _httpClient.GetAsync(listMessagesUrl);
+
+            if (messagesResponse.IsSuccessStatusCode)
+            {
+                return true;
+            }
+            else
+            {
+                var errorContent = await messagesResponse.Content.ReadAsStringAsync();
+                Console.WriteLine($"Error: {messagesResponse.StatusCode}, Details: {errorContent}");
+                return false;
+            }
+        }
+        //""thread_xmxBCpt16SEaJsL7woRxFqtD"""
+        public async Task<List<Messagethread>> GetThreadMessages(string threadId)
+        {
+            var listMessagesUrlTemplate = "https://api.openai.com/v1/threads/{0}/messages";
+            var listMessagesUrl = string.Format(listMessagesUrlTemplate, threadId);
+
+            _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _apiKey);
+            _httpClient.DefaultRequestHeaders.Remove("OpenAI-Beta");
+            _httpClient.DefaultRequestHeaders.Add("OpenAI-Beta", "assistants=v2");
+            _httpClient.DefaultRequestHeaders.Remove("OpenAI-Assistant-ID");
+            _httpClient.DefaultRequestHeaders.Add("OpenAI-Assistant-ID", _assistantId);
+
+            var messagesResponse = await _httpClient.GetAsync(listMessagesUrl);
+
+            if (messagesResponse.IsSuccessStatusCode)
+            {
+                var messagesResponseContent = await messagesResponse.Content.ReadAsStringAsync();
+                var messagesJsonResponse = JObject.Parse(messagesResponseContent);
+
+                if (messagesJsonResponse["data"] != null && messagesJsonResponse["data"].Any())
+                {
+                    var messages = messagesJsonResponse["data"].ToObject<List<Messagethread>>();
+                    return messages;
+                }
+            }
+            else
+            {
+                var errorContent = await messagesResponse.Content.ReadAsStringAsync();
+                Console.WriteLine($"Error: {messagesResponse.StatusCode}, Details: {errorContent}");
+            }
+
+            return null;
+        }
+
+        public class Messagethread
+        {
+            public string Id { get; set; }
+            public string Role { get; set; }
+            public List<Content> Content { get; set; }
+        }
+
+        public class Content
+        {
+            public string Type { get; set; }
+            public Text Text { get; set; }
+        }
+
+        public class Text
+        {
+            public string Value { get; set; }
+        }
+
+        public async Task<string> ContinueDialogWithThread(string prompt, string threadId)
+        {
+            var addMessageUrlTemplate = "https://api.openai.com/v1/threads/{0}/messages";
+            var createRunUrlTemplate = "https://api.openai.com/v1/threads/{0}/runs";
+            var retrieveRunUrlTemplate = "https://api.openai.com/v1/threads/{0}/runs/{1}";
+            var listMessagesUrlTemplate = "https://api.openai.com/v1/threads/{0}/messages";
+
+            _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _apiKey);
+            _httpClient.DefaultRequestHeaders.Remove("OpenAI-Beta");
+            _httpClient.DefaultRequestHeaders.Add("OpenAI-Beta", "assistants=v2");
+            _httpClient.DefaultRequestHeaders.Remove("OpenAI-Assistant-ID");
+            _httpClient.DefaultRequestHeaders.Add("OpenAI-Assistant-ID", _assistantId);
+
+            try
+            {
+                var addMessageUrl = string.Format(addMessageUrlTemplate, threadId);
+                var messageRequestBody = new
+                {
+                    role = "user",
+                    content = new[]
+                    {
+                new {
+                    type = "text",
+                    text = prompt
+                }
+            }
+                };
+
+                var messageHttpContent = new StringContent(JsonConvert.SerializeObject(messageRequestBody), Encoding.UTF8, "application/json");
+                var messageResponse = await _httpClient.PostAsync(addMessageUrl, messageHttpContent);
+
+                if (!messageResponse.IsSuccessStatusCode)
+                {
+                    var errorContent = await messageResponse.Content.ReadAsStringAsync();
+                    return $"Error sending message: {messageResponse.StatusCode}, Details: {errorContent}";
+                }
+
+                var createRunUrl = string.Format(createRunUrlTemplate, threadId);
+                var runRequestBody = new
+                {
+                    assistant_id = _assistantId
+                };
+
+                var runHttpContent = new StringContent(JsonConvert.SerializeObject(runRequestBody), Encoding.UTF8, "application/json");
+                var runResponse = await _httpClient.PostAsync(createRunUrl, runHttpContent);
+
+                if (!runResponse.IsSuccessStatusCode)
+                {
+                    var errorContent = await runResponse.Content.ReadAsStringAsync();
+                    return $"Error creating run: {runResponse.StatusCode}, Details: {errorContent}";
+                }
+
+                var runResponseContent = await runResponse.Content.ReadAsStringAsync();
+                var runJsonResponse = JObject.Parse(runResponseContent);
+                string runId = runJsonResponse["id"].ToString();
+
+                var retrieveRunUrl = string.Format(retrieveRunUrlTemplate, threadId, runId);
+                JObject runStatus;
+                do
+                {
+                    await Task.Delay(1500);
+                    var runStatusResponse = await _httpClient.GetAsync(retrieveRunUrl);
+                    var runStatusContent = await runStatusResponse.Content.ReadAsStringAsync();
+                    runStatus = JObject.Parse(runStatusContent);
+                } while (runStatus["status"].ToString() != "completed" && runStatus["status"].ToString() != "failed");
+
+                if (runStatus["status"].ToString() == "failed")
+                {
+                    return "Run failed.";
+                }
+
+                var listMessagesUrl = string.Format(listMessagesUrlTemplate, threadId);
+                var messagesResponse = await _httpClient.GetAsync(listMessagesUrl);
+
+                if (!messagesResponse.IsSuccessStatusCode)
+                {
+                    var errorContent = await messagesResponse.Content.ReadAsStringAsync();
+                    return $"Error retrieving messages: {messagesResponse.StatusCode}, Details: {errorContent}";
+                }
+
+                var messagesResponseContent = await messagesResponse.Content.ReadAsStringAsync();
+                var messagesJsonResponse = JObject.Parse(messagesResponseContent);
+
+                if (messagesJsonResponse["data"] == null || !messagesJsonResponse["data"].Any())
+                {
+                    return $"Error: 'data' is null or empty. Full response: {messagesResponseContent}";
+                }
+
+                var assistantMessage = messagesJsonResponse["data"].FirstOrDefault(msg => msg["role"].ToString() == "assistant");
+                if (assistantMessage == null)
+                {
+                    return $"Error: No assistant message found. Full response: {messagesResponseContent}";
+                }
+
+                var messageContent = assistantMessage["content"][0]["text"]["value"].ToString();
+                var threadid = assistantMessage["thread_id"].ToString();
+
+                return $"Message: {messageContent}, ThreadId: {threadid}";
+            }
+            catch (Exception ex)
+            {
+                return $"Exception occurred: {ex.Message}";
+            }
+        }
+
 
     }
 }
